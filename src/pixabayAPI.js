@@ -25,13 +25,10 @@ const API_KEY = '35094796-5a2a00c884908a27b4c2774f3';
 // }
 
 export async function fetchPhotosPixabay(searchQuery, page) {
-  try {
-    const response = await axios
-      .get(`https://pixabay.com/api/?key=${API_KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=40`);
-    console.log(response);
-  } catch (error) {
-    console.error(error);
-  }
+  const {data} = await axios
+    .get(`https://pixabay.com/api/?key=${API_KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=40`);
+  console.log(data);
+  return data;
 }
 
 

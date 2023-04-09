@@ -6,15 +6,17 @@ import { fetchPhotosPixabay } from './pixabayAPI';
 
 const formEl = document.querySelector('#search-form');
 const galleryEl = document.querySelector('.gallery');
-const btnLoadMoreEl = document.querySelector('.load-more');
+const btnLoadMoreEl = document.querySelector('.btn__load-more');
 
 // Початкове значення параметра page повинно бути 1
 let page = 1;
 // Початковий пошуковий запит
 let inputSearchText = '';
 
-// btnLoadMoreEl.setAttribute('disabled', false);
-btnLoadMoreEl.classList.add('is-hidden');
+// btnLoadMoreEl.classList.add('is-hidden');
+let isHidden = true;
+// btnLoadMoreEl.classList.add('isHidden');
+
 
 formEl.addEventListener('submit', handleBtnOnSearch);
 btnLoadMoreEl.addEventListener('click', handleBtnOnLoadMore);
@@ -22,6 +24,7 @@ btnLoadMoreEl.addEventListener('click', handleBtnOnLoadMore);
 async function handleBtnOnSearch(e) {
   e.preventDefault();
   inputSearchText = e.target.elements.searchQuery.value.trim();
+  console.log(inputSearchText)
 
   if (!inputSearchText) {
     return;
@@ -32,63 +35,75 @@ async function handleBtnOnSearch(e) {
   galleryEl.innerHTML = '';
 
   try {
-    const photos = await fetchPhotosPixabay(inputSearchText, page);
-    handleSuccess(photos);
-    // return await photos.json();
+    const { hits, totalHits } = await fetchPhotosPixabay(inputSearchText, page);
+    console.log(hits);
+    if (hits.length === 0) {
+    Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+    btnLoadMoreEl.classList.add('is-hidden');
+    return;
+  }
+    handleSuccess(hits);
+    // btnLoadMoreEl.classList.remove('is-hidden');
   } catch (error) {
     handleError(error);
   }
 }
 
 async function handleBtnOnLoadMore() {
-// З кожним наступним запитом, його необхідно збільшити на 1.
-  page += 1; 
+  // З кожним наступним запитом, його необхідно збільшити на 1.
+  page += 1;
+
   try {
-    const photos = await fetchPhotosPixabay(inputSearchText, page);
-    handleSuccess(photos);
+    const { hits, totalHits } = await fetchPhotosPixabay(inputSearchText, page);
+    if (totalHits >= hits.length * page * 40) {
+      btnLoadMoreEl.classList.add('is-hidden');
+      Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+    }
+    handleSuccess(hits);
   } catch (error) {
-    handleError(error);
-  }
-}
-
-function handleSuccess(photos) {
-  if (photos.length === 0) {
-    Notiflix.Notify.success('Sorry, there are no images matching your search query. Please try again.');
-    return;
+      handleError(error);
+    }
   }
 
-  function addMarkupPhotos(photos) {
-    return photos.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) => {
-     `<div class="photo-card">
-      <a href="${largeImageURL}"
-      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-        <div class="info">
-          <p class="info-item">
-            <b>Likes: ${likes}</b>
-          </p>
-          <p class="info-item">
-            <b>Views: ${views}</b>
-          </p>
-          <p class="info-item">
-            <b>Comments: ${comments}</b>
-          </p>
-          <p class="info-item">
-            <b>Downloads: ${downloads}</b>
-          </p>
-        </div>
-      </div>`
-  }).join('');
-  };
+async function handleSuccess(hits) {
 
-  galleryEl.insertAdjacentHTML('beforeend', addMarkupPhotos());
+  const galleryItems = hits.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) => {
+    return `<div class="gallery-item">
+              <a class="link" href="${largeImageURL}" target="_blank">
+                <img src="${webformatURL}" alt="${tags}" width="300" height="200" loading="lazy">
+              </a>
+              <div class="gallery-item-info">
+                <ul class="gallery-item-info__card">
+                  <div class="span">
+                    <li class="list name">Likes</li>
+                    <li class="list number">${likes}</li>
+                  </div>
+                  <div class="span">
+                    <li class="list name">Views</li>
+                    <li class="list number">${views}</li>
+                  </div>
+                  <div class="span">
+                    <li class="list name">Comments</li>
+                    <li class="list number">${comments}</li>
+                  </div>
+                  <div class="span">
+                    <li class="list name">Downloads</li>
+                    <li class="list number">${downloads}</li>
+                  </div>
+                </ul>
+              </div>
+            </div>`;
+    }).join('');
 
-  // Показуємо кнопку "Load more"
-  btnLoadMoreEl.classList.remove('is-hidden'); 
-  // btnLoadMoreEl.setAttribute('disabled', true);
+ try {
+   const {hits, totalHits} = await fetchPhotosPixabay(inputSearchText, page);
+   galleryEl.insertAdjacentHTML('beforeend', galleryItems);
+   btnLoadMoreEl.classList.remove('is-hidden');
+ } catch (err) {
+   console.log(err);
+  }
 }
 
 function handleError(error) {
-  // Notiflix.Notify.failure("We're sorry, but you've reached the end of search results.");
-  console.error(error);
-}
-
+  console.log(error);
+  }
