@@ -31,19 +31,19 @@ async function handleBtnOnSearch(e) {
   }
 
   page = 1;
+  btnLoadMoreEl.classList.add('is-hidden');
   // Під час пошуку за новим ключовим словом необхідно повністю очищати вміст галереї, щоб не змішувати результати.
   galleryEl.innerHTML = '';
 
   try {
     const { hits, totalHits } = await fetchPhotosPixabay(inputSearchText, page);
-    console.log(hits);
     if (hits.length === 0) {
-    Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
-    btnLoadMoreEl.classList.add('is-hidden');
-    return;
-  }
+      Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+      btnLoadMoreEl.classList.add('is-hidden');
+      return;
+    }
+    btnLoadMoreEl.classList.remove('is-hidden');
     handleSuccess(hits);
-    // btnLoadMoreEl.classList.remove('is-hidden');
   } catch (error) {
     handleError(error);
   }
@@ -55,11 +55,13 @@ async function handleBtnOnLoadMore() {
 
   try {
     const { hits, totalHits } = await fetchPhotosPixabay(inputSearchText, page);
-    if (totalHits >= hits.length * page * 40) {
-      btnLoadMoreEl.classList.add('is-hidden');
+
+    if (page >= Math.ceil(totalHits / 40)) {
       Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+      btnLoadMoreEl.classList.add('is-hidden');
     }
     handleSuccess(hits);
+    //  btnLoadMoreEl.classList.remove('is-hidden');
   } catch (error) {
       handleError(error);
     }
@@ -95,13 +97,8 @@ async function handleSuccess(hits) {
             </div>`;
     }).join('');
 
- try {
-   const {hits, totalHits} = await fetchPhotosPixabay(inputSearchText, page);
-   galleryEl.insertAdjacentHTML('beforeend', galleryItems);
-   btnLoadMoreEl.classList.remove('is-hidden');
- } catch (err) {
-   console.log(err);
-  }
+  galleryEl.insertAdjacentHTML('beforeend', galleryItems);
+  // btnLoadMoreEl.classList.remove('is-hidden');
 }
 
 function handleError(error) {
